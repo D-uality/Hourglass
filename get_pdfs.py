@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 PATH = r'C:\Users\victo\OneDrive\Desktop\comp_programming\data_science\scraping\cie_subjects.json'
-BASE_URL = r'https://www.cambridgeinternational.org/'
+BASE_URL = r'https://www.cambridgeinternational.org'
 
 try:
   with open(PATH, 'r') as f: 
