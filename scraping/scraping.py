@@ -80,21 +80,37 @@ def parse_syllabus(pdf_file):
     Returns range of page numbers in syllabus containing the subject content.
     """
     pages = None
-    doc = pymupdf.open(pdf_file)
-    toc = doc.get_toc() # gets all bookmarks
+    try:
+        doc = pymupdf.open(pdf_file)
+        toc = doc.get_toc() # gets all bookmarks
 
-    start = 0
-    end = -1
-    i = -1
-    while start > end and i < len(toc)-1:
-        i += 1
-        if 'subject content' in toc[i][1].casefold() and start == 0:
-            start = toc[i][2]
-        elif start > 0 and toc[i][0] == 1:
-            end = toc[i][2]
-            
-    if start < end:
-        pages = range(start, end)
-    doc.close()
-
+        start = 0
+        end = -1
+        i = -1
+        while start > end and i < len(toc)-1:
+            i += 1
+            if 'subject content' in toc[i][1].casefold() and start == 0:
+                start = toc[i][2]
+            elif start > 0 and toc[i][0] == 1:
+                end = toc[i][2]
+                
+        if start < end:
+            pages = range(start, end)
+    except pymupdf.FileNotFoundError:
+        raise FileNotFoundError
+    finally:
+        doc.close()
     return pages
+
+def overwrite(pdf_file):
+    try:
+        pages = parse_syllabus(pdf_file)
+        doc = pymupdf.open(pdf_file)
+        new_doc = pymupdf.open()
+        new_doc.insert_pdf(doc, from_page=pages[0], to_page=pages[-1])
+        doc.close()
+        new_doc.save(pdf_file)
+    except pymupdf.FileNotFoundError:
+        raise FileNotFoundError
+    finally:
+        if not doc.is_closed: doc.close()
