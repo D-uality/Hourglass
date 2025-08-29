@@ -9,6 +9,19 @@ client = OpenAI(
   api_key=api_key
 )
 
+dev_prompt = """The user will input a file of a CIE GCE AS & A Level
+"past examination, and a list of topics that the
+"examination covers. If the file is not a CIE GCE AS & A Level exam,
+"simply output 'invalid file'. Categorize the CIE Past Paper into the 
+"topics provided by the user.
+"Ignore subparts of questions and instead categorize a question into
+"multiple topics if the question covers multiple topics.
+"Only categorize the questions as a whole and not as subparts
+"(e.g. regard Question 3(a) and Question 3(b) as just Question 3).
+"Use the following structure: Topic:(new line) Question number(new line)Question number, etc.
+"Give a concise answer with no introduction or concluding questions."""
+
+
 class PastPaper:
   def __init__(self, file_path: str, topics: list[str]):
     # private __file_path: String
@@ -16,7 +29,6 @@ class PastPaper:
     # private __chatlog: List[Dictionary]
     self.__file_path = file_path
     self.__topics = topics
-    self.__chatlog = []
   def get_file_path(self):
     return self.__file_path
   def get_topics(self):
@@ -32,10 +44,12 @@ class PastPaper:
       file=open(self.__file_path, "rb"),
       purpose="user_data"
     )
+
     completion = client.chat.completions.create(
       model="gpt-4o-mini",
+      temperature=0,
       messages=[ 
-        {"role": "developer", "content": "The user will input a file of a CIE GCE AS & A Level past examination, and a list of topics that the examination covers. If the file is not a CIE GCE AS & A Level exam, simply output 'invalid file'. Categorize the CIE Past Paper into the topics provided by the user. Ignore subparts of questions and instead categorize a question into multiple topics if the question covers multiple topics. Only categorize the questions as a whole and not as subparts (e.g. regard Question 3(a) and Question 3(b) as just Question 3). Use the following structure: Topic:(new line) Question number(new line)Question number, etc. Give a concise answer with no introduction or concluding questions."},
+        {"role": "developer", "content": "The user will input a file of a CIE GCE AS & A Level past examination, and a list of topics that the examination covers. If the file is not a CIE GCE AS & A Level exam, output 'invalid file'. Categorize the CIE Past Paper into the topics provided by the user. Ignore subparts of questions and instead categorize a question into multiple topics if the question covers multiple topics. Only categorize the questions as a whole and not as subparts (e.g. regard Question 3(a) and Question 3(b) as just Question 3). Output the result in strict JSON format with the structure: {\"Topic name\": [question_numbers] \n}. No introduction or extra text."},
         {"role": "user",  
          "content": [ 
            {"type": "file",
@@ -47,10 +61,13 @@ class PastPaper:
               "type": "text",
               "text": ', '.join(self.__topics)
             },
-         ]
+         ],
+        
 
          }
       ], 
+
+      response_format = {"type": "json_object"},
     )
     return completion.choices[0].message.content
 
@@ -72,10 +89,6 @@ def identify(file_path): # checks if past paper code is 9709, 9702 or 9618.
     return "9618"
   else:
     return -1
-
-
-chatlog = []
-
 
 
 test = PastPaper(r"C:\Users\victo\Downloads\9709_w24_qp_13.pdf", ["Quadratics", "Functions", "Coordinate Geometry", "Circular Measure", "Trigonometry", "Series", "Other"])
